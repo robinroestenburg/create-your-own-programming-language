@@ -1,85 +1,55 @@
 class Lexer
 
-  KEYWORDS = ['while', 'def', 'class', 'if', 'true', 'false', 'nil']
+  IDENTIFIER      = /\A([a-z]\w*)/
+  CONSTANT        = /\A([A-Z]\w*)/
+  NUMBER          = /\A([0-9]+)/
+  STRING          = /\A"([^"]*)"/
+  LONG_OPERATOR   = /\A(\|\||&&|==|!=|<=|>=)/
+  WHITESPACE      = /\A /
+  INDENT          = /\A\n( *)/m   # Matches "<newline> <spaces>"
+  EXPLICIT_INDENT = /\A\:\n( +)/m # Matches ": <newline> <spaces>"
+
 
   def tokenize(code)
-
     code.chomp!
-    tokens = []
+    tokenizer = Tokenizer.new
 
-    current_indent = 0
-    indent_stack = []
+    while tokenizer.position < code.size
+      chunk = code[tokenizer.position..-1]
 
-    i = 0
-    while i < code.size
-      chunk = code[i..-1]
-
-      if identifier = chunk[/\A([a-z]\w*)/, 1]
-        if KEYWORDS.include? identifier
-          tokens << [identifier.upcase.to_sym, identifier]
-        else
-          tokens << [:IDENTIFIER, identifier]
-        end
-        i += identifier.size
-
-      elsif constant = chunk[/\A([A-Z]\w*)/, 1]
-        tokens << [:CONSTANT, constant]
-        i += constant.size
-
-      elsif number = chunk[/\A([0-9]+)/, 1]
-        tokens << [:NUMBER, number.to_i]
-        i += number.size
-
-      elsif string = chunk[/\A"([^"]*)"/, 1]
-        tokens << [:STRING, string]
-        i += string.size + 2
-
-      elsif indent = chunk[/\A\:\n( +)/m, 1] # Matches ": <newline> <spaces>"
-        if indent.size <= current_indent
-          raise "Bad indent level, got #{indent.size} indents, " +
-            "expected > #{current_indent}"
-        end
-
-        current_indent = indent.size
-        indent_stack.push(current_indent)
-        tokens << [:INDENT, indent.size]
-        i += indent.size + 2
-
-      elsif indent = chunk[/\A\n( *)/m, 1] # Matches "<newline> <spaces>"
-        if indent.size == current_indent
-          tokens << [:NEWLINE, "\n"]
-        elsif indent.size < current_indent
-          while indent.size < current_indent
-            indent_stack.pop
-            current_indent = indent_stack.last || 0
-            tokens << [:DEDENT, indent.size]
-          end
-          tokens << [:NEWLINE, "\n"]
-        else
-          raise "Missing ':'"
-        end
-        i += indent.size + 1
-
-      elsif operator = chunk[/\A(\|\||&&|==|!=|<=|>=)/, 1]
-        tokens << [operator, operator]
-        i += operator.size
-
-      elsif chunk.match(/\A /)
-        i += 1
-
-      else
-        value = chunk[0,1]
-        tokens << [value, value]
-        i += 1
-
-      end
+      tokenizer = if identifier = chunk[IDENTIFIER, 1]
+                    IdentifierTokenizer.new(identifier, tokenizer).tokenize
+                  elsif constant = chunk[CONSTANT, 1]
+                    ConstantTokenizer.new(constant, tokenizer).tokenize
+                  elsif number = chunk[NUMBER, 1]
+                    NumberTokenizer.new(number, tokenizer).tokenize
+                  elsif string = chunk[STRING, 1]
+                    StringTokenizer.new(string, tokenizer).tokenize
+                  elsif indent = chunk[EXPLICIT_INDENT, 1]
+                    ExplicitIndentTokenizer.new(indent, tokenizer).tokenize
+                  elsif indent = chunk[INDENT, 1]
+                    IndentTokenizer.new(indent, tokenizer).tokenize
+                  elsif operator = chunk[LONG_OPERATOR, 1]
+                    LongOperatorTokenizer.new(operator, tokenizer).tokenize
+                  elsif chunk.match(WHITESPACE)
+                    WhitespaceTokenizer.new('', tokenizer).tokenize
+                  else
+                    OperatorTokenizer.new(chunk[0,1], tokenizer).tokenize
+                  end
     end
 
-    while indent = indent_stack.pop
-      tokens << [:DEDENT, indent_stack.first || 0]
-    end
-
-    tokens
+    tokenizer.decrease_indents.tokens
   end
 
 end
+
+require_relative 'tokenizer/tokenizer'
+require_relative 'tokenizer/indent_tokenizer'
+require_relative 'tokenizer/identifier_tokenizer'
+require_relative 'tokenizer/constant_tokenizer'
+require_relative 'tokenizer/number_tokenizer'
+require_relative 'tokenizer/string_tokenizer'
+require_relative 'tokenizer/explicit_indent_tokenizer'
+require_relative 'tokenizer/whitespace_tokenizer'
+require_relative 'tokenizer/long_operator_tokenizer'
+require_relative 'tokenizer/operator_tokenizer'
