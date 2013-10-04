@@ -1,20 +1,18 @@
 class Tokenizer
 
-  attr_reader :tokens, :current_indent, :indent_stack, :position
+  attr_reader :tokens, :indent_stack, :position
 
   def initialize(args = {})
-    @tokens         = args.fetch(:tokens, [])
-    @current_indent = args.fetch(:current_indent, 0)
-    @indent_stack   = args.fetch(:indent_stack, [])
-    @position       = args.fetch(:position, 0)
+    @tokens       = args.fetch(:tokens, [])
+    @indent_stack = args.fetch(:indent_stack, [])
+    @position     = args.fetch(:position, 0)
   end
 
   def arguments
     {
-      tokens:         tokens,
-      current_indent: current_indent,
-      indent_stack:   indent_stack,
-      position:       position
+      tokens:       tokens,
+      indent_stack: indent_stack,
+      position:     position
     }
   end
 
@@ -32,7 +30,6 @@ class Tokenizer
 
   def increase_indent(indent_size)
     Tokenizer.new(arguments.merge({
-      current_indent: indent_size,
       indent_stack: indent_stack + [indent_size],
     }))
   end
@@ -48,10 +45,15 @@ class Tokenizer
     new_current_indent = new_indent_stack.last || 0
 
     Tokenizer.new(arguments.merge({
-      tokens:         tokens + [[:DEDENT, new_current_indent]],
-      current_indent: new_current_indent,
-      indent_stack:   new_indent_stack,
+      tokens:       tokens + [[:DEDENT, new_current_indent]],
+      indent_stack: new_indent_stack,
     }))
+  end
+
+  private
+
+  def current_indent
+    indent_stack.last || 0
   end
 
 end
