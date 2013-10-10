@@ -25,3 +25,8 @@ Constants['Object'].def :print do |receiver, arguments|
   puts arguments.first.ruby_value
   Constants['nil']
 end
+
+Constants['Number'].def :+ do |receiver, arguments|
+  result = arguments.reduce(0) { |sum, arg| sum + arg.ruby_value }
+  Constants['Number'].new_with_value(receiver.ruby_value + result)
+end
