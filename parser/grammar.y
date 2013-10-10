@@ -73,8 +73,8 @@ rule
         ;
 
   Arguments:
-          '(' ')'
-        | '(' ArgList ')'
+          '(' ')'                           { result = [] }
+        | '(' ArgList ')'                   { result = val[1] }
         ;
 
   ArgList:
