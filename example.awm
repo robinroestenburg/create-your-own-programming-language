@@ -1,0 +1,6 @@
+class MyFirstAwesomeClass:
+  def does_it_work(yes_string):
+    yes_string
+
+awesome_class = MyFirstAwesomeClass.new
+print(awesome_class.does_it_work("Yeaaah buddy!"))
