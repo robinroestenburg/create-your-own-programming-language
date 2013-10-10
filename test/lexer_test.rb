@@ -1,5 +1,5 @@
-require 'test/unit'
-require_relative 'lexer'
+require 'test_helper'
+require 'lexer/lexer'
 
 class TestLexer < Test::Unit::TestCase
 

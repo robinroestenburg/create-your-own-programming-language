@@ -50,8 +50,6 @@ class Tokenizer
     }))
   end
 
-  private
-
   def current_indent
     indent_stack.last || 0
   end
