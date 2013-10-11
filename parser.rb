@@ -1,1 +1,1 @@
-require 'parser/parser.rb'
+require 'parser/parser'
